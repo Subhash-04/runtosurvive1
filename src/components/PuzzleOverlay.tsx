@@ -333,12 +333,16 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
                                             cursor: 'pointer',
                                             background: isFixed
                                                 ? 'rgba(0, 255, 136, 0.2)'
-                                                : selectedLine === line.line
-                                                    ? 'rgba(255, 200, 0, 0.3)'
-                                                    : 'transparent',
+                                                : isWrongGuess
+                                                    ? 'rgba(255, 0, 0, 0.06)'
+                                                    : selectedLine === line.line
+                                                        ? 'rgba(255, 200, 0, 0.3)'
+                                                        : 'transparent',
                                             borderLeft: isFixed
                                                 ? '3px solid #00ff88'
-                                                : '3px solid transparent',
+                                                : isWrongGuess
+                                                    ? '3px solid #ff4444'
+                                                    : '3px solid transparent',
                                             display: 'flex',
                                             alignItems: 'center',
                                             transition: 'background 0.2s',
