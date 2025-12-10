@@ -5,9 +5,10 @@ interface PuzzleOverlayProps {
     puzzle: Puzzle;
     onSolve: (keyName: string) => void;
     onClose: () => void;
+    onHintUsed?: () => void; // Callback to deduct 2 mins from timer
 }
 
-export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverlayProps) {
+export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: PuzzleOverlayProps) {
     const [answer, setAnswer] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -17,6 +18,18 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
     const [fixedBugs, setFixedBugs] = useState<number[]>([]);
     const [selectedLine, setSelectedLine] = useState<number | null>(null);
     const [wrongGuesses, setWrongGuesses] = useState<number[]>([]);
+    const [showHint, setShowHint] = useState(false);
+    const [hintsRemaining, setHintsRemaining] = useState(2); // Max 2 hints
+
+    const handleHintClick = () => {
+        if (hintsRemaining > 0) {
+            setShowHint(true);
+            setHintsRemaining(prev => prev - 1);
+            if (onHintUsed) {
+                onHintUsed(); // Deduct 2 mins from timer
+            }
+        }
+    };
 
     const handleSubmit = () => {
         const userAnswer = answer.toUpperCase().trim();
@@ -166,6 +179,35 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
         marginTop: '15px',
     };
 
+    const hintButtonStyle: React.CSSProperties = {
+        padding: '10px 20px',
+        fontSize: '14px',
+        background: hintsRemaining > 0 ? 'linear-gradient(135deg, #ffc800 0%, #ff9900 100%)' : '#555',
+        color: hintsRemaining > 0 ? '#000' : '#888',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: hintsRemaining > 0 ? 'pointer' : 'not-allowed',
+        fontWeight: 'bold',
+        marginTop: '15px',
+        marginBottom: '10px',
+    };
+
+    const renderHintSection = () => (
+        <div style={{ marginTop: '15px' }}>
+            {!showHint ? (
+                <button
+                    onClick={handleHintClick}
+                    style={hintButtonStyle}
+                    disabled={hintsRemaining === 0}
+                >
+                    💡 Use Hint ({hintsRemaining}/2 remaining) - Costs 2 min
+                </button>
+            ) : (
+                <p style={hintStyle}>💡 Hint: {puzzle.content.hint}</p>
+            )}
+        </div>
+    );
+
     const renderPuzzleContent = () => {
         switch (puzzle.type) {
             case 'hex':
@@ -203,7 +245,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
                             </div>
                         </div>
 
-                        <p style={hintStyle}>Hint: {puzzle.content.hint}</p>
+                        {renderHintSection()}
                         <input
                             type="text"
                             value={answer}
@@ -221,7 +263,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
                         <div style={codeBlockStyle}>
                             {puzzle.content.code}
                         </div>
-                        <p style={hintStyle}>Hint: {puzzle.content.hint}</p>
+                        {renderHintSection()}
                         <input
                             type="text"
                             value={answer}
@@ -239,7 +281,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
                         <div style={codeBlockStyle}>
                             {puzzle.content.algorithm}
                         </div>
-                        <p style={hintStyle}>Hint: {puzzle.content.hint}</p>
+                        {renderHintSection()}
                         <input
                             type="text"
                             value={answer}
@@ -306,7 +348,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose }: PuzzleOverla
                                 </button>
                             </div>
                         </div>
-                        <p style={hintStyle}>Hint: {puzzle.content.hint}</p>
+                        {renderHintSection()}
                     </>
                 );
 

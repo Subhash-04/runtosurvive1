@@ -1263,6 +1263,10 @@ export default function MazeGame() {
             setActivePuzzle(null);
           }}
           onClose={() => setActivePuzzle(null)}
+          onHintUsed={() => {
+            // Deduct 2 minutes (120 seconds) from remaining time
+            setTimeRemaining(prev => Math.max(0, prev - 120));
+          }}
         />
       )}
 
