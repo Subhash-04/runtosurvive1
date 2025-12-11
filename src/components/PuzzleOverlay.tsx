@@ -1,32 +1,33 @@
 import React, { useState } from 'react';
-import { Puzzle, caesarDecode, getHexReferenceChart } from '../data/puzzles';
+import { Puzzle, vigenereDecode, getHexReferenceChart } from '../data/puzzles';
 
 interface PuzzleOverlayProps {
     puzzle: Puzzle;
     onSolve: (keyName: string) => void;
     onClose: () => void;
-    onHintUsed?: () => void; // Callback to deduct 2 mins from timer
+    onHintUsed?: () => void; // Callback to deduct 5 mins from timer
+    hintsUsedForPuzzle: number; // How many hints have been used for this puzzle (0, 1, or 2)
 }
 
-export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: PuzzleOverlayProps) {
+export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed, hintsUsedForPuzzle }: PuzzleOverlayProps) {
     const [answer, setAnswer] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [caesarShift, setCaesarShift] = useState(0);
-    const [decodedMessage, setDecodedMessage] = useState(puzzle.type === 'caesar' ? puzzle.content.encodedMessage : '');
-    const [caesarAnswer, setCaesarAnswer] = useState('');
+    const [decodedMessage, setDecodedMessage] = useState(puzzle.type === 'vigenere' ? puzzle.content.encodedMessage : '');
+    const [vigenereAnswer, setVigenereAnswer] = useState('');
     const [fixedBugs, setFixedBugs] = useState<number[]>([]);
     const [selectedLine, setSelectedLine] = useState<number | null>(null);
     const [wrongGuesses, setWrongGuesses] = useState<number[]>([]);
-    const [showHint, setShowHint] = useState(false);
-    const [hintsRemaining, setHintsRemaining] = useState(2); // Max 2 hints
+    const [showHint, setShowHint] = useState(hintsUsedForPuzzle > 0); // Show hint if already used
+
+    // Calculate remaining hints for this puzzle (max 2 per puzzle)
+    const hintsRemaining = 2 - hintsUsedForPuzzle;
 
     const handleHintClick = () => {
         if (hintsRemaining > 0) {
             setShowHint(true);
-            setHintsRemaining(prev => prev - 1);
             if (onHintUsed) {
-                onHintUsed(); // Deduct 2 mins from timer
+                onHintUsed(); // Deduct 5 mins from timer and increment hint count for this puzzle
             }
         }
     };
@@ -44,14 +45,13 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
         }
     };
 
-    const handleCaesarShift = () => {
-        const decoded = caesarDecode(puzzle.content.encodedMessage, caesarShift);
+    const handleVigenereSubmit = () => {
+        const userAnswer = vigenereAnswer.toUpperCase().trim();
+        // Decode the message with the key and check
+        const decoded = vigenereDecode(puzzle.content.encodedMessage, puzzle.content.key);
         setDecodedMessage(decoded);
-    };
 
-    const handleCaesarSubmit = () => {
-        const userAnswer = caesarAnswer.toUpperCase().trim();
-        if (userAnswer === 'PROCEED') {
+        if (userAnswer === decoded || userAnswer === 'PROCEED') {
             setSuccess(`✅ Correct! You earned: ${puzzle.keyName}`);
             setTimeout(() => onSolve(puzzle.keyName), 1500);
         } else {
@@ -200,7 +200,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                     style={hintButtonStyle}
                     disabled={hintsRemaining === 0}
                 >
-                    💡 Use Hint ({hintsRemaining}/2 remaining) - Costs 2 min
+                    💡 Use Hint ({hintsRemaining}/2 remaining) - Costs 3 min
                 </button>
             ) : (
                 <p style={hintStyle}>💡 Hint: {puzzle.content.hint}</p>
@@ -240,6 +240,50 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                                     }}>
                                         <div style={{ color: '#00ff88', fontWeight: 'bold' }}>{item.letter}</div>
                                         <div style={{ color: '#888' }}>{item.hex}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Hex to Binary Chart */}
+                        <div style={{ marginBottom: '20px' }}>
+                            <h4 style={{ color: '#ffc800', marginBottom: '10px' }}>🔢 Hex to Binary Reference (0-F)</h4>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(8, 1fr)',
+                                gap: '4px',
+                                background: '#0d1117',
+                                padding: '10px',
+                                borderRadius: '8px',
+                                fontSize: '12px'
+                            }}>
+                                {[
+                                    { hex: '0', bin: '0000' },
+                                    { hex: '1', bin: '0001' },
+                                    { hex: '2', bin: '0010' },
+                                    { hex: '3', bin: '0011' },
+                                    { hex: '4', bin: '0100' },
+                                    { hex: '5', bin: '0101' },
+                                    { hex: '6', bin: '0110' },
+                                    { hex: '7', bin: '0111' },
+                                    { hex: '8', bin: '1000' },
+                                    { hex: '9', bin: '1001' },
+                                    { hex: 'A', bin: '1010' },
+                                    { hex: 'B', bin: '1011' },
+                                    { hex: 'C', bin: '1100' },
+                                    { hex: 'D', bin: '1101' },
+                                    { hex: 'E', bin: '1110' },
+                                    { hex: 'F', bin: '1111' },
+                                ].map(item => (
+                                    <div key={item.hex} style={{
+                                        background: '#1a1a2e',
+                                        padding: '5px',
+                                        textAlign: 'center',
+                                        borderRadius: '4px',
+                                        border: '1px solid #30363d'
+                                    }}>
+                                        <div style={{ color: '#ffc800', fontWeight: 'bold' }}>{item.hex}</div>
+                                        <div style={{ color: '#888', fontFamily: 'monospace' }}>{item.bin}</div>
                                     </div>
                                 ))}
                             </div>
@@ -293,7 +337,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                     </>
                 );
 
-            case 'caesar':
+            case 'vigenere':
                 return (
                     <>
                         <div style={{ marginBottom: '20px' }}>
@@ -303,33 +347,37 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                             </div>
                         </div>
                         <div style={{ marginBottom: '20px' }}>
-                            <p style={{ color: '#fff', marginBottom: '10px' }}>Decoded Message (Shift: {caesarShift}):</p>
-                            <div style={{
-                                ...codeBlockStyle,
-                                fontSize: '24px',
-                                textAlign: 'center',
-                                letterSpacing: '5px',
-                                color: '#c9d1d9',
-                            }}>
-                                {decodedMessage}
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-                            <label style={{ color: '#fff' }}>Shift Value:</label>
-                            <input
-                                type="number"
-                                value={caesarShift}
-                                onChange={(e) => setCaesarShift(parseInt(e.target.value) || 0)}
-                                min={0}
-                                max={25}
-                                style={{ ...inputStyle, width: '80px', marginBottom: 0 }}
-                            />
-                            <button onClick={handleCaesarShift} style={buttonStyle}>
-                                SHIFT
-                            </button>
+                            <p style={{ color: '#ffc800', marginBottom: '10px' }}>🔑 Key: <span style={{ fontFamily: 'monospace', letterSpacing: '3px' }}>{puzzle.content.key}</span></p>
                         </div>
 
-                        {/* Code entry field */}
+                        {/* Vigenère explanation */}
+                        <div style={{ marginBottom: '20px', padding: '15px', background: 'rgba(255, 200, 0, 0.1)', border: '1px solid #ffc800', borderRadius: '8px' }}>
+                            <p style={{ color: '#ffc800', marginBottom: '10px', fontWeight: 'bold' }}>📖 How Vigenère Works:</p>
+                            <p style={{ color: '#ccc', fontSize: '13px', lineHeight: 1.6 }}>
+                                For each letter in the message, subtract the corresponding key letter position:<br />
+                                • A=0, B=1, C=2, ... Z=25<br />
+                                • Decoded = (Cipher - Key + 26) mod 26<br />
+                                • The key repeats: KEY → KEYKEYK...
+                            </p>
+                        </div>
+
+                        {/* Decoded preview */}
+                        {decodedMessage !== puzzle.content.encodedMessage && (
+                            <div style={{ marginBottom: '20px' }}>
+                                <p style={{ color: '#fff', marginBottom: '10px' }}>Your Decoding:</p>
+                                <div style={{
+                                    ...codeBlockStyle,
+                                    fontSize: '24px',
+                                    textAlign: 'center',
+                                    letterSpacing: '5px',
+                                    color: '#00ff88',
+                                }}>
+                                    {decodedMessage}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Answer entry field */}
                         <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(0, 255, 136, 0.1)', border: '1px solid #00ff88', borderRadius: '8px' }}>
                             <p style={{ color: '#00ff88', marginBottom: '10px' }}>
                                 🔐 Enter the decoded message to unlock:
@@ -337,13 +385,13 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <input
                                     type="text"
-                                    value={caesarAnswer}
-                                    onChange={(e) => setCaesarAnswer(e.target.value)}
+                                    value={vigenereAnswer}
+                                    onChange={(e) => setVigenereAnswer(e.target.value)}
                                     placeholder="Enter the decoded word..."
                                     style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleCaesarSubmit()}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleVigenereSubmit()}
                                 />
-                                <button onClick={handleCaesarSubmit} style={buttonStyle}>
+                                <button onClick={handleVigenereSubmit} style={buttonStyle}>
                                     SUBMIT
                                 </button>
                             </div>
@@ -458,7 +506,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                                     ))}
                             </div>
                         )}
-                        <p style={hintStyle}>Hint: {puzzle.content.hint}</p>
+                        {renderHintSection()}
                     </>
                 );
 
@@ -488,7 +536,7 @@ export default function PuzzleOverlay({ puzzle, onSolve, onClose, onHintUsed }: 
                 )}
 
                 <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-                    {puzzle.type !== 'caesar' && puzzle.type !== 'debug' && (
+                    {puzzle.type !== 'vigenere' && puzzle.type !== 'debug' && (
                         <button onClick={handleSubmit} style={buttonStyle}>
                             SUBMIT
                         </button>

@@ -2,7 +2,7 @@
 
 export interface Puzzle {
     id: number;
-    type: 'hex' | 'pseudocode' | 'algorithm' | 'caesar' | 'debug';
+    type: 'hex' | 'pseudocode' | 'algorithm' | 'vigenere' | 'debug';
     position: { x: number; z: number };
     title: string;
     description: string;
@@ -11,138 +11,165 @@ export interface Puzzle {
     keyName: string;
 }
 
-// Puzzle 1: Hex Decode with Reference Chart
+// Puzzle 1: Complex Hex Decode with Bitwise XOR
 const puzzle1: Puzzle = {
     id: 1,
     type: 'hex',
     position: { x: 10, z: 5 },
-    title: 'DECODE THE SECRET',
-    description: 'Convert this hexadecimal message to ASCII to find the password. Use the reference chart below:',
+    title: 'CRYPTOGRAPHIC DECODE',
+    description: 'Decode the encrypted message! Each hex byte has been XOR\'d with 0x11. Apply XOR 0x11 to each byte, then convert to ASCII:',
     content: {
-        hex: '47 41 54 45 57 41 59',
-        hint: 'Each pair of hex digits represents one ASCII character. Convert hex to decimal, then find the letter.',
-        referenceChart: true // Flag to show the chart
+        hex: '52 58 41 59 54 43',
+        hint: 'Example: 55 XOR 11 = 44 (D). XOR is reversible - apply the same operation to decrypt!',
+        referenceChart: true,
+        xorKey: '0x11'
     },
-    solution: 'GATEWAY',
+    // 52 XOR 11 = 43 = C, 58 XOR 11 = 49 = I, 41 XOR 11 = 50 = P, 59 XOR 11 = 48 = H, 54 XOR 11 = 45 = E, 43 XOR 11 = 52 = R
+    solution: 'CIPHER',
     keyName: '🔑 Ruby Key'
 };
 
-// Puzzle 2: Pseudo-code Analysis
+// Puzzle 2: Complex Pseudocode with Recursion & Memoization
 const puzzle2: Puzzle = {
     id: 2,
     type: 'pseudocode',
     position: { x: 25, z: 12 },
-    title: 'ANALYZE THE CODE',
-    description: 'What value does this function return for mystery(10)?',
+    title: 'RECURSIVE ANALYSIS',
+    description: 'Analyze this recursive function carefully. What value does compute(6) return?',
     content: {
-        code: `FUNCTION mystery(n)
-    IF n <= 0 THEN
-        RETURN 0
+        code: `FUNCTION compute(n)
+    IF n <= 1 THEN
+        RETURN n
     END IF
     
-    SET result = 0
-    FOR i FROM 1 TO n DO
-        result = result + i
-    END FOR
-    
-    RETURN result - n - 3
+    IF n MOD 2 == 0 THEN
+        // Even: multiply by 3 and add recursive call
+        RETURN 3 * compute(n - 1) + 1
+    ELSE
+        // Odd: add two recursive calls
+        RETURN compute(n - 1) + compute(n - 2)
+    END IF
 END FUNCTION
 
-What is mystery(10)?`,
-        hint: 'Sum of 1 to 10 is 55. Then subtract n and 3.'
+What is compute(6)?`,
+        hint: 'Start from the base cases and work up. compute(2) = 4'
     },
-    solution: '42',
+    solution: '64',
     keyName: '🔑 Sapphire Key'
 };
 
-// Puzzle 3: Algorithm Challenge (no specific language)
+// Puzzle 3: Toughest Algorithm - State Machine with Hash
 const puzzle3: Puzzle = {
     id: 3,
     type: 'algorithm',
     position: { x: 15, z: 20 },
-    title: 'ALGORITHM CHALLENGE',
-    description: 'Follow the algorithm to decode the secret word:',
+    title: 'STATE MACHINE DECODE',
+    description: 'Execute this state machine algorithm step by step to find the secret code:',
     content: {
-        algorithm: `INPUT: "XQORFN"
+        algorithm: `ALGORITHM StateMachineDecode:
 
-ALGORITHM DecodeWord:
-1. Take the input string
-2. For each character in the string:
-   a. Find its position in alphabet (A=1, B=2, ... Z=26)
-   b. Subtract 2 from the position
-   c. If result < 1, wrap around (add 26)
-   d. Convert back to letter
-3. OUTPUT the decoded string
+INITIAL STATE: value = 7, code = ""
 
-Execute this algorithm and enter the result:`,
-        hint: 'X(24) - 2 = V(22), Q(17) - 2 = O(15)...'
+TRANSITION RULES:
+  IF value is ODD:
+    - Multiply value by 3, then add 1
+    - Append 'A' to code
+  IF value is EVEN:
+    - Divide value by 2
+    - Append 'B' to code
+
+TERMINATION: Stop when value equals 1
+
+EXECUTE the algorithm and count:
+- How many 'A's in the final code?
+- How many 'B's in the final code?
+
+ANSWER FORMAT: Enter as "XY" where X = count of A's, Y = count of B's
+
+Example trace for value=3:
+3 (odd) → 3*3+1=10, code="A"
+10 (even) → 10/2=5, code="AB"
+... continue until value=1`,
+        hint: 'Example with 6: 6 then 3 then 10 then 5 then 16 then 8 then 4 then 2 then 1. Count As and Bs!'
     },
-    solution: 'UNLOCK',
+    solution: '511',
     keyName: '🔑 Emerald Key'
 };
 
-// Puzzle 4: Caesar Cipher (interactive shift + code entry)
+// Puzzle 4: Vigenère Cipher (replacing Caesar - much harder)
 const puzzle4: Puzzle = {
     id: 4,
-    type: 'caesar',
+    type: 'vigenere',
     position: { x: 30, z: 28 },
-    title: 'CAESAR CIPHER DECODER',
-    description: 'Find the right shift value to decode this message, then enter the decoded word:',
+    title: 'VIGENÈRE CIPHER DECODER',
+    description: 'This message is encrypted with a Vigenère cipher. The key is "KEY". Decode the message and enter the result:',
     content: {
-        encodedMessage: 'BDAOQQP',
-        hint: 'Try different shift values. The correct shift will reveal a readable word. Then type that word!'
+        // PROCEED encrypted with KEY:
+        // P(15)+K(10)=25=Z, R(17)+E(4)=21=V, O(14)+Y(24)=38%26=12=M
+        // C(2)+K(10)=12=M, E(4)+E(4)=8=I, E(4)+Y(24)=28%26=2=C, D(3)+K(10)=13=N
+        encodedMessage: 'ZVMMICN',
+        key: 'KEY',
+        hint: 'Example: To decrypt Q with key K, calculate Q(16) - K(10) = 6 = G. Apply same logic to each letter!',
+        table: true
     },
-    solution: 'PROCEED', // The decoded word to enter
+    solution: 'PROCEED',
     keyName: '🔑 Topaz Key'
 };
 
-// Puzzle 5: C Code Debugger (25 lines, 5 bugs - NO red markers)
+// Puzzle 5: Java Code Debugger (complex bugs)
 const puzzle5: Puzzle = {
     id: 5,
     type: 'debug',
     position: { x: 35, z: 35 },
-    title: 'DEBUG THE CODE',
-    description: 'This C program has 5 bugs. Find each buggy line, click on it, and select the correct fix. No hints - find them yourself!',
+    title: 'DEBUG THE JAVA CODE',
+    description: 'This Java program has 5 subtle bugs. Find each buggy line, click on it, and select the correct fix. These bugs are tricky!',
     content: {
         code: [
-            { line: 1, text: '#include <stdio.h>', bug: false },
-            { line: 2, text: '#include <stdlib.h>', bug: false },
-            { line: 3, text: '', bug: false },
-            { line: 4, text: 'int calculateSum(int arr[], int size) {', bug: false },
-            { line: 5, text: '    int sum;', bug: true, bugId: 1, fix: 'int sum = 0;', options: ['int sum = 1;', 'int sum = 0;', 'float sum;'] },
-            { line: 6, text: '    for (int i = 0; i <= size; i++) {', bug: true, bugId: 2, fix: 'for (int i = 0; i < size; i++) {', options: ['for (int i = 0; i < size; i++) {', 'for (int i = 1; i <= size; i++) {', 'for (int i = 0; i < size; i--) {'] },
-            { line: 7, text: '        sum = sum + arr[i];', bug: false },
-            { line: 8, text: '    }', bug: false },
-            { line: 9, text: '    return sum;', bug: false },
-            { line: 10, text: '}', bug: false },
-            { line: 11, text: '', bug: false },
-            { line: 12, text: 'void printArray(int arr[], int size) {', bug: false },
-            { line: 13, text: '    printf("Array: ");', bug: false },
-            { line: 14, text: '    for (int i = 0; i < size; i++) {', bug: false },
-            { line: 15, text: '        printf("%d ", arr[i]);', bug: false },
-            { line: 16, text: '    }', bug: false },
-            { line: 17, text: '    printf("\\n");', bug: false },
-            { line: 18, text: '}', bug: false },
-            { line: 19, text: '', bug: false },
-            { line: 20, text: 'int main() {', bug: false },
-            { line: 21, text: '    int numbers[5] = {10, 20, 30, 40, 50};', bug: false },
-            { line: 22, text: '    int size = 5;', bug: false },
-            { line: 23, text: '    int result;', bug: false },
-            { line: 24, text: '', bug: false },
-            { line: 25, text: '    printArray(numbers, size);', bug: false },
-            { line: 26, text: '    result = calculateSum(numbers, size);', bug: false },
-            { line: 27, text: '', bug: false },
-            { line: 28, text: '    if (result = 150) {', bug: true, bugId: 3, fix: 'if (result == 150) {', options: ['if (result >= 150) {', 'if (result != 150) {', 'if (result == 150) {'] },
-            { line: 29, text: '        printf("Sum is correct: %d\\n", result);', bug: false },
-            { line: 30, text: '    } else {', bug: false },
-            { line: 31, text: '        printf("Sum is incorrect\\n");', bug: false },
-            { line: 32, text: '    }', bug: false },
-            { line: 33, text: '', bug: false },
-            { line: 34, text: '    printf("Program complete\\n")', bug: true, bugId: 4, fix: 'printf("Program complete\\n");', options: ['printf("Program complete");', 'printf("Program complete\\n");', 'print("Program complete\\n");'] },
-            { line: 35, text: '    return;', bug: true, bugId: 5, fix: 'return 0;', options: ['return 0;', 'return 1;', 'return result;'] },
-            { line: 36, text: '}', bug: false }
+            { line: 1, text: 'public class SecretDecoder {', bug: false },
+            { line: 2, text: '', bug: false },
+            { line: 3, text: '    private static int[] cache = new int[100];', bug: false },
+            { line: 4, text: '    private static boolean[] computed = new boolean[100];', bug: false },
+            { line: 5, text: '', bug: false },
+            { line: 6, text: '    public static int fibonacci(int n) {', bug: false },
+            { line: 7, text: '        if (n < 0) return -1;', bug: false },
+            { line: 8, text: '        if (n <= 1) return n;', bug: false },
+            { line: 9, text: '', bug: false },
+            { line: 10, text: '        if (computed[n] = true) {', bug: true, bugId: 1, fix: 'if (computed[n] == true) {', options: ['if (computed[n] != true) {', 'if (computed[n] == true) {', 'if (computed[n] = false) {'] },
+            { line: 11, text: '            return cache[n];', bug: false },
+            { line: 12, text: '        }', bug: false },
+            { line: 13, text: '', bug: false },
+            { line: 14, text: '        cache[n] = fibonacci(n - 1) + fibonacci(n - 2);', bug: false },
+            { line: 15, text: '        computed[n] = true;', bug: false },
+            { line: 16, text: '        return cache[n];', bug: false },
+            { line: 17, text: '    }', bug: false },
+            { line: 18, text: '', bug: false },
+            { line: 19, text: '    public static String decode(String encoded) {', bug: false },
+            { line: 20, text: '        StringBuilder result = new StringBuilder();', bug: false },
+            { line: 21, text: '        String[] parts = encoded.split(",");', bug: false },
+            { line: 22, text: '', bug: false },
+            { line: 23, text: '        for (int i = 0; i <= parts.length; i++) {', bug: true, bugId: 2, fix: 'for (int i = 0; i < parts.length; i++) {', options: ['for (int i = 1; i <= parts.length; i++) {', 'for (int i = 0; i < parts.length; i--) {', 'for (int i = 0; i < parts.length; i++) {'] },
+            { line: 24, text: '            int fibIndex = Integer.parseInt(parts[i].trim());', bug: false },
+            { line: 25, text: '            int charCode = fibonacci(fibIndex) + 65;', bug: false },
+            { line: 26, text: '            result.append((char) charCode);', bug: false },
+            { line: 27, text: '        }', bug: false },
+            { line: 28, text: '', bug: false },
+            { line: 29, text: '        return result;', bug: true, bugId: 3, fix: 'return result.toString();', options: ['return result.toString();', 'return (String) result;', 'return result.String();'] },
+            { line: 30, text: '    }', bug: false },
+            { line: 31, text: '', bug: false },
+            { line: 32, text: '    public static void main(String[] args) {', bug: false },
+            { line: 33, text: '        String secret = "7,4,11,8,6,12,3";', bug: false },
+            { line: 34, text: '        String decoded = decode(secret);', bug: false },
+            { line: 35, text: '', bug: false },
+            { line: 36, text: '        if (decoded.length() > 0)', bug: true, bugId: 4, fix: 'if (decoded.length() > 0) {', options: ['if (decoded.size() > 0) {', 'if (decoded.length() > 0) {', 'if (decoded.length > 0) {'] },
+            { line: 37, text: '            System.out.println("Decoded: " + decoded);', bug: false },
+            { line: 38, text: '            System.out.println("Success!");', bug: false },
+            { line: 39, text: '        }', bug: false },
+            { line: 40, text: '', bug: false },
+            { line: 41, text: '        System.exit(1);', bug: true, bugId: 5, fix: 'System.exit(0);', options: ['System.exit(-1);', 'System.exit();', 'System.exit(0);'] },
+            { line: 42, text: '    }', bug: false },
+            { line: 43, text: '}', bug: false }
         ],
-        hint: 'Look carefully at: variable initialization, loop bounds, comparison operators, statement endings, and return values.'
+        hint: 'Look for: assignment vs comparison, array bounds, return types, missing braces, and exit codes. Java is strict!'
     },
     solution: [1, 2, 3, 4, 5], // Bug IDs that need to be fixed
     keyName: '🔑 Amethyst Key'
@@ -150,7 +177,28 @@ const puzzle5: Puzzle = {
 
 export const puzzles: Puzzle[] = [puzzle1, puzzle2, puzzle3, puzzle4, puzzle5];
 
-// Helper function to decode Caesar cipher
+// Helper function to decode Vigenère cipher
+export function vigenereDecode(text: string, key: string): string {
+    let result = '';
+    const keyUpper = key.toUpperCase();
+    let keyIndex = 0;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i].toUpperCase();
+        if (char >= 'A' && char <= 'Z') {
+            const charCode = char.charCodeAt(0) - 65;
+            const keyChar = keyUpper[keyIndex % keyUpper.length].charCodeAt(0) - 65;
+            const decoded = ((charCode - keyChar + 26) % 26) + 65;
+            result += String.fromCharCode(decoded);
+            keyIndex++;
+        } else {
+            result += char;
+        }
+    }
+    return result;
+}
+
+// Deprecated: Keep for backward compatibility
 export function caesarDecode(text: string, shift: number): string {
     return text
         .split('')
@@ -164,9 +212,9 @@ export function caesarDecode(text: string, shift: number): string {
         .join('');
 }
 
-// Check if Caesar decode is correct
-export function checkCaesarSolution(encodedMessage: string, shift: number): boolean {
-    const decoded = caesarDecode(encodedMessage, shift);
+// Check if Vigenère decode is correct
+export function checkVigenereSolution(encodedMessage: string, key: string): boolean {
+    const decoded = vigenereDecode(encodedMessage, key);
     return decoded === 'PROCEED';
 }
 
@@ -180,4 +228,10 @@ export function getHexReferenceChart(): { letter: string; decimal: number; hex: 
         chart.push({ letter, decimal, hex });
     }
     return chart;
+}
+
+// XOR helper for puzzle 1
+export function xorDecode(hexString: string, xorKey: number): string {
+    const bytes = hexString.split(' ').map(h => parseInt(h, 16));
+    return bytes.map(b => String.fromCharCode(b ^ xorKey)).join('');
 }
